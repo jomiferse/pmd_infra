@@ -16,8 +16,9 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
     networks:
+      - pmd_public
       - pmd_private
     restart: unless-stopped
     security_opt:
@@ -34,14 +35,16 @@ services:
 
   frontend:
     build:
-      context: ../pmd_frontend
-      dockerfile: docker/Dockerfile
+      context: ../../pmd_frontend
+      dockerfile: ../pmd_infra/docker/frontend/Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?}
         NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:?}
     environment:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?}
       NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:?}
+    env_file:
+      - ../.env
     depends_on:
       api:
         condition: service_healthy
@@ -77,10 +80,10 @@ services:
 
   api:
     build:
-      context: ../pmd
-      dockerfile: docker/Dockerfile.api
+      context: ../../pmd
+      dockerfile: ../pmd_infra/docker/backend/Dockerfile.api
     env_file:
-      - ./.env
+      - ../.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,10 +120,10 @@ services:
 
   worker:
     build:
-      context: ../pmd
-      dockerfile: docker/Dockerfile.worker
+      context: ../../pmd
+      dockerfile: ../pmd_infra/docker/backend/Dockerfile.worker
     env_file:
-      - ./.env
+      - ../.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -157,10 +160,10 @@ services:
 
   scheduler:
     build:
-      context: ../pmd
-      dockerfile: docker/Dockerfile.scheduler
+      context: ../../pmd
+      dockerfile: ../pmd_infra/docker/backend/Dockerfile.scheduler
     env_file:
-      - ./.env
+      - ../.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -197,10 +200,10 @@ services:
 
   migrate:
     build:
-      context: ../pmd
-      dockerfile: docker/Dockerfile.api
+      context: ../../pmd
+      dockerfile: ../pmd_infra/docker/backend/Dockerfile.api
     env_file:
-      - ./.env
+      - ../.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -224,14 +227,14 @@ services:
   postgres:
     image: postgres:16
     env_file:
-      - ./.env
+      - ../.env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-pmd}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backups:/backups
+      - ../backups:/backups
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -274,5 +277,8 @@ volumes:
   caddy_config:
 
 networks:
+  pmd_public:
+    driver: bridge
   pmd_private:
     driver: bridge
+    internal: true

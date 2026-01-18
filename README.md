@@ -18,32 +18,49 @@ Ensure these folders are siblings:
 - pmd_frontend/
 - pmd_infra/
 
+Docker assets live in `pmd_infra`:
+- `docker/` (Dockerfiles)
+- `compose/` (dev + prod compose files)
+- `scripts/` (dev + deploy + backup)
+
 ## 3) Configure environment
-From the VPS:
-- cd pmd_infra
+From `pmd_infra`:
+
+Dev (local):
+- cp env/dev.env.example .env
+- Edit .env with local values if needed.
+
+Prod (VPS):
 - cp env/prod.env.example .env
 - Edit .env with your domains, secrets, and production values.
 
-## 4) Deploy
+## 4) Run dev (local)
+Option A (recommended):
+- ./scripts/dev.sh
+
+Option B (manual):
+- docker compose -f compose/compose.dev.yml up --build
+
+## 5) Deploy (prod)
 Option A (recommended):
 - ./scripts/deploy.sh
 
 Option B (manual):
-- docker compose -f compose.prod.yml --env-file .env up -d --build
-- docker compose -f compose.prod.yml --env-file .env run --rm migrate
+- docker compose -f compose/compose.prod.yml --env-file .env up -d --build
+- docker compose -f compose/compose.prod.yml --env-file .env run --rm migrate
 
-## 5) Update
+## 6) Update
 - git pull (in pmd and pmd_frontend repos)
 - cd pmd_infra
 - ./scripts/deploy.sh
 
-## 6) Logs and restarts
-- docker compose -f compose.prod.yml --env-file .env logs -f --tail=200
-- docker compose -f compose.prod.yml --env-file .env restart api
+## 7) Logs and restarts
+- docker compose -f compose/compose.prod.yml --env-file .env logs -f --tail=200
+- docker compose -f compose/compose.prod.yml --env-file .env restart api
 
-## 7) Backups
+## 8) Backups
 - ./scripts/backup.sh
 
 Restore example:
-- docker compose -f compose.prod.yml --env-file .env exec -T postgres \
+- docker compose -f compose/compose.prod.yml --env-file .env exec -T postgres \
   psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < backups/your_backup.sql
