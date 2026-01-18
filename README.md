@@ -26,7 +26,9 @@ cp env/prod.env.example .env
 
 ## Links
 - Troubleshooting: `docker compose -f compose/compose.prod.yml --env-file .env logs -f --tail=200`, `docker compose -f compose/compose.prod.yml --env-file .env restart api`, `curl https://api.<domain>/health`.
-- Backups: `./scripts/backup.sh` (keeps last 7 by default).
+- Backups: `./scripts/backup_db.sh` (keeps last 7 by default).
+- Status: `./scripts/status.sh`.
+- Smoke tests: `./scripts/smoke_test.sh <api_key>` (local/dev), `./scripts/smoke_prod.sh` (prod).
 - Backend: `../pmd/README.md`
 - Dashboard: `../pmd_frontend/README.md`
 - Marketing: `../pmd_marketing/README.md`
