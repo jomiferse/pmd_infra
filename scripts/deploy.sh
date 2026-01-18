@@ -2,34 +2,20 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPTS_DIR="${ROOT_DIR}/scripts"
 COMPOSE_FILE="${COMPOSE_FILE:-${ROOT_DIR}/compose/compose.prod.yml}"
 ENV_FILE="${ENV_FILE:-${ROOT_DIR}/.env}"
 
-if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "Missing env file: ${ENV_FILE}" >&2
-  exit 1
-fi
+ENV_FILE="${ENV_FILE}" "${SCRIPTS_DIR}/preflight.sh"
 
+echo "Pulling images..."
 docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" pull
+echo "Building images..."
 docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" build --pull
+echo "Starting services..."
 docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d --remove-orphans
 
-docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" run --rm migrate
-
-set -a
-# shellcheck disable=SC1090
-source "${ENV_FILE}"
-set +a
-
-if [[ -z "${NEXT_PUBLIC_API_BASE_URL:-}" || -z "${APP_URL:-}" ]]; then
-  echo "NEXT_PUBLIC_API_BASE_URL and APP_URL must be set for health checks." >&2
-  exit 1
-fi
-
-echo "Checking API health..."
-curl -fsS "${NEXT_PUBLIC_API_BASE_URL%/}/health" >/dev/null
-
-echo "Checking frontend..."
-curl -fsS "${APP_URL%/}/" >/dev/null
+ENV_FILE="${ENV_FILE}" COMPOSE_FILE="${COMPOSE_FILE}" "${SCRIPTS_DIR}/migrate.sh"
+ENV_FILE="${ENV_FILE}" COMPOSE_FILE="${COMPOSE_FILE}" "${SCRIPTS_DIR}/smoke_prod.sh"
 
 echo "Deploy complete."
