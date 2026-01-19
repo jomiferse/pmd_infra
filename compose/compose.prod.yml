@@ -9,6 +9,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    env_file:
+      - ../.env
     environment:
       APP_DOMAIN: ${APP_DOMAIN:?}
       API_DOMAIN: ${API_DOMAIN:?}
@@ -43,6 +45,7 @@ services:
     environment:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:?}
       NEXT_PUBLIC_TELEGRAM_BOT_USERNAME: ${NEXT_PUBLIC_TELEGRAM_BOT_USERNAME:?}
+      HOSTNAME: 0.0.0.0
     env_file:
       - ../.env
     depends_on:
